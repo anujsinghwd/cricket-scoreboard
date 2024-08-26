@@ -1,9 +1,12 @@
-import React from 'react';
-import HomePage from './components/pages/HomePage';
+import React from "react";
+import HomePage from "./components/pages/HomePage";
+import { MatchProvider } from "./context/MatchContext";
 
 function App() {
   return (
-    <HomePage />
+    <MatchProvider>
+      <HomePage />
+    </MatchProvider>
   );
 }
 

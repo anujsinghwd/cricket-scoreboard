@@ -5,20 +5,22 @@ interface ButtonProps extends MuiButtonProps {
   label: string;
   selectedColor?: 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
   defaultColor?: 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+  isSelected?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({
   label,
   selectedColor = 'primary',
-  defaultColor = 'default',
+  defaultColor = 'secondary',
+  isSelected = false,
   ...props
 }) => {
-  const [selected, setSelected] = useState(false);
+  const [selected, setSelected] = useState(isSelected);
 
-  const handleClick = () => {
+  const handleClick = (e: any) => {
     setSelected(!selected);
-    if (props.onClick) {
-      props.onClick();
+    if (props?.onClick) {
+      props.onClick(e);
     }
   };
 
@@ -26,6 +28,7 @@ const Button: React.FC<ButtonProps> = ({
     <MuiButton
       {...props}
       color={selected ? selectedColor : defaultColor}
+      variant={(selected && !props?.variant) ? 'contained' : 'outlined'}
       onClick={handleClick}
     >
       {label}

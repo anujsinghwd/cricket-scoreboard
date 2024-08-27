@@ -4,13 +4,22 @@ import MatchCommentary from "../organisms/MatchCommentary";
 import ScoreCard from "../molecules/ScoreCard";
 import CommentarySection from "../organisms/CommentarySection";
 import { BatsmanScorecard, BowlerScorecard } from "../../types";
-import { SelectChangeEvent } from "@mui/material";
+import { SelectChangeEvent, MenuItem, Select } from "@mui/material";
+import { useMatchContext } from '../../context/MatchContext';
 
 const DashboardContainer = styled.div`
   display: flex;
   width: 100%;
   height: 100vh;
   overflow: hidden;
+`;
+
+const MatchSelectionContainer = styled.div`
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid black;
 `;
 
 const CommentaryContainer = styled.div`
@@ -27,13 +36,26 @@ const ScoreCardContainer = styled.div`
 `;
 
 const Dashboard: React.FC = () => {
+  const { currentAction, handleCurrentAction, matchData } = useMatchContext();
   const [selectedButton, setSelectedButton] = useState<string | number>("");
   const [striker, setStriker] = useState<string>("");
   const [nonStriker, setNonStriker] = useState<string>("");
   const [bowler, setBowler] = useState<string>("");
   const [lastNumber, setLastNumber] = useState<number | null>(null);
-  const [actions, setActions] = useState<(string | number)[]>([]);
   const [isOperationActive, setIsOperationActive] = useState<boolean>(false);
+  const [selectedMatch, setSelectedMatch] = useState<string>("");
+
+  const buildMatchData = () => {
+    if (matchData) {
+      return matchData.map((data: any) => ({ value: data.id, label: `${data.teamA?.name} - ${data.teamB?.name}` }));
+    }
+    return [];
+  }
+
+  const handleMatchChange = (event: SelectChangeEvent<string>) => {
+    setSelectedMatch(event.target.value as string);
+    // Logic to fetch and display data for the selected match can be added here
+  };
 
   const handleStrikerChange = (event: SelectChangeEvent<string>) => {
     setStriker(event.target.value as string);
@@ -60,7 +82,7 @@ const Dashboard: React.FC = () => {
       setLastNumber(buttonValue);
     } else {
       // Always push string values
-      setActions((prev) => [...prev, buttonValue]);
+      handleCurrentAction(buttonValue);
     }
 
     console.log(`Button clicked: ${buttonValue}`);
@@ -75,7 +97,7 @@ const Dashboard: React.FC = () => {
     setLastNumber(null);
     setSelectedButton("");
     setIsOperationActive(true);
-    setActions([]); // Clear previous actions
+    handleCurrentAction(null); // Clear previous actions
     console.log("Operation started");
   };
 
@@ -86,10 +108,9 @@ const Dashboard: React.FC = () => {
     }
 
     setIsOperationActive(false);
-    console.log("Operation ended with actions: ", actions);
     if (lastNumber !== null) {
       // Push the last number clicked to actions
-      setActions((prev) => [...prev, lastNumber]);
+      handleCurrentAction(lastNumber);
       setLastNumber(null); // Clear lastNumber after pushing
     }
 
@@ -115,9 +136,22 @@ const Dashboard: React.FC = () => {
 
   // Update actions on Done
   const handleDoneWithCommentary = () => {
-    handleDone();
-    actions.forEach((action) => addToCommentary(action));
-    setActions([]); // Clear actions after adding to commentary
+    if (!isOperationActive) {
+      alert("No operation is currently active!");
+      return;
+    }
+
+    setIsOperationActive(false);
+    if (lastNumber !== null) {
+      // Push the last number clicked to actions
+      handleCurrentAction(lastNumber);
+      setLastNumber(null); // Clear lastNumber after pushing
+    }
+
+    const actionCpy: any = JSON.parse(JSON.stringify(currentAction));
+    actionCpy.push(lastNumber);
+    actionCpy.forEach((action: string | number) => addToCommentary(action));
+    handleCurrentAction(null); // Clear actions after adding to commentary
   };
 
   // Example data
@@ -164,27 +198,47 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <DashboardContainer>
-      <ScoreCardContainer>
-        <ScoreCard batsmen={batsmen} bowlers={bowlers} />
-      </ScoreCardContainer>
-      <CommentaryContainer>
-        <MatchCommentary
-          striker={striker}
-          nonStriker={nonStriker}
-          bowler={bowler}
-          handleStrikerChange={handleStrikerChange}
-          handleNonStrikerChange={handleNonStrikerChange}
-          handleBowlerChange={handleBowlerChange}
-          onButtonClick={handleButtonClick}
-          onDone={handleDoneWithCommentary}
-          isOperationActive={isOperationActive}
-          onStart={handleStart}
-          selectedButtons={false}
-        />
-        <CommentarySection commentary={commentary} />
-      </CommentaryContainer>
-    </DashboardContainer>
+    <>
+      <MatchSelectionContainer>
+        <Select
+          value={selectedMatch}
+          onChange={handleMatchChange}
+          displayEmpty
+          inputProps={{ "aria-label": "Select Match" }}
+        >
+          <MenuItem value="">
+            <em>Select Match</em>
+          </MenuItem>
+          {buildMatchData()?.length && (
+            buildMatchData().map((data: any) => (<MenuItem value={data.value}>{data.label}</MenuItem>))
+          )}
+          {/* <MenuItem value="match1">Match 1</MenuItem>
+          <MenuItem value="match2">Match 2</MenuItem>
+          <MenuItem value="match3">Match 3</MenuItem> */}
+        </Select>
+      </MatchSelectionContainer>
+      <DashboardContainer>
+        <ScoreCardContainer>
+          <ScoreCard batsmen={batsmen} bowlers={bowlers} />
+        </ScoreCardContainer>
+        <CommentaryContainer>
+          <MatchCommentary
+            striker={striker}
+            nonStriker={nonStriker}
+            bowler={bowler}
+            handleStrikerChange={handleStrikerChange}
+            handleNonStrikerChange={handleNonStrikerChange}
+            handleBowlerChange={handleBowlerChange}
+            onButtonClick={handleButtonClick}
+            onDone={handleDoneWithCommentary}
+            isOperationActive={isOperationActive}
+            onStart={handleStart}
+            selectedButtons={false}
+          />
+          <CommentarySection commentary={commentary} />
+        </CommentaryContainer>
+      </DashboardContainer>
+    </>
   );
 };
 

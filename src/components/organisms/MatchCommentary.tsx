@@ -140,7 +140,7 @@ const MatchCommentary: React.FC<MatchCommentaryProps> = ({
               isSelected={selectedButtons}
             />
           ))}
-          {["wide", "noball", "bye", "legbye"].map((value) => (
+          {["wide", "noball", "bye", "legbye", "wicket"].map((value) => (
             <Button
               key={value}
               value={value}

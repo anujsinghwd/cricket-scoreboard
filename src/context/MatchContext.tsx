@@ -22,17 +22,19 @@ interface MatchData {
   id: string;
   teamA: Team;
   teamB: Team;
-  score: { [teamId: string]: number };
-  wickets: { [teamId: string]: number };
+  // score: { [teamId: string]: number };
+  // wickets: { [teamId: string]: number };
 }
 
 interface MatchContextProps {
-  matchData: MatchData | null;
+  matchData: MatchData[] | null;
   teams: Team[];
   players: Player[];
   fetchMatchData: () => Promise<void>;
   fetchTeams: () => Promise<void>;
   fetchPlayers: () => Promise<void>;
+  handleCurrentAction: (val: string | number | null) => void;
+  currentAction: (string | number)[];
 }
 
 // Create a context
@@ -42,14 +44,15 @@ const MatchContext = createContext<MatchContextProps | undefined>(undefined);
 export const MatchProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [matchData, setMatchData] = useState<MatchData | null>(null);
+  const [matchData, setMatchData] = useState<MatchData[] | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [currentAction, setCurrentAction] = useState<(string | number)[]>([]);
 
   // Define fetch functions
   const fetchMatchData = async () => {
     try {
-      const response = await fetch("/api/match"); // Replace with your API endpoint
+      const response = await fetch("http://localhost:3002/matches"); // Replace with your API endpoint
       const data = await response.json();
       setMatchData(data);
     } catch (error) {
@@ -77,6 +80,15 @@ export const MatchProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const handleCurrentAction = (value: string | number | null) => {
+    if(value) {
+      setCurrentAction((prev) => [...prev, value]);
+    } else{
+      setCurrentAction([]);
+    }
+    
+  };
+
   useEffect(() => {
     fetchMatchData();
     fetchTeams();
@@ -89,9 +101,11 @@ export const MatchProvider: React.FC<{ children: ReactNode }> = ({
         matchData,
         teams,
         players,
+        currentAction,
         fetchMatchData,
         fetchTeams,
         fetchPlayers,
+        handleCurrentAction,
       }}
     >
       {children}
